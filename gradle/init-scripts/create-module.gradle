@@ -1,7 +1,6 @@
-def skeletonRepositoryUrl = "http://dev-repo.swr.ard:10088/sophora/development-module-skeleton.git"
 def myModulesFile = file("my-modules.properties")
 def allModulesFile = file("modules.properties")
-def cloneDir = file(".create-module").canonicalFile
+def skeletonDir = file("gradle/module-skeleton").canonicalFile
 def modulesDir = file("modules").canonicalFile
 
 def moduleName = (gradle.startParameter.projectProperties.containsKey("module.name")) ? gradle.startParameter.projectProperties.get("module.name") : ""
@@ -100,19 +99,12 @@ if (newModuleDir.exists()) {
     throw new GradleException("module ${moduleName} already exists!")
 }
 
-println "cloning module-skeleton..."
-cloneDir.deleteDir()
-"git clone --depth 1 $skeletonRepositoryUrl ${cloneDir.canonicalPath}".execute().waitFor()
-new File(cloneDir, 'README.md').delete()
-
 println "creating new module at $newModuleDir..."
 copy {
-    from cloneDir
+    from skeletonDir
     into newModuleDir
     exclude ".git/**"
 }
-
-cloneDir.deleteDir()
 
 println "initializing module..."
 new File(newModuleDir, 'src').mkdirs()
