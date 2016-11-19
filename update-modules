@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo Initializing/updating modules...
+./gradlew --init-script gradle/init-scripts/update-modules.gradle -Pmodules="$@" -q --no-daemon

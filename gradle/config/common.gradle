@@ -1,0 +1,11 @@
+if (!rootProject.hasProperty("common_config_applied")) {
+    rootProject.ext {
+        common_config_applied = []
+    }
+}
+
+if (!rootProject.common_config_applied.contains(project)) {
+    applyFromProjectOrRepository "gradle/config/repositories.gradle"
+
+    rootProject.common_config_applied += project
+}

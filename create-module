@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+echo Creating new module...
+./gradlew --init-script create-module.gradle -Pmodule.name="$1" -Pmodule.repository="$2" -q --no-daemon

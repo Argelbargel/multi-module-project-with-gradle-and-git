@@ -1,0 +1,132 @@
+def skeletonRepositoryUrl = "http://dev-repo.swr.ard:10088/sophora/development-module-skeleton.git"
+def myModulesFile = file("my-modules.properties")
+def allModulesFile = file("modules.properties")
+def cloneDir = file(".create-module").canonicalFile
+def modulesDir = file("modules").canonicalFile
+
+def moduleName = (gradle.startParameter.projectProperties.containsKey("module.name")) ? gradle.startParameter.projectProperties.get("module.name") : ""
+def moduleRepository = (gradle.startParameter.projectProperties.containsKey("module.repository")) ? gradle.startParameter.projectProperties.get("module.repository") : ""
+
+// wir nutzen den git-Befehl auf der Kommandzeile, da Grgit Verzeichnisse nach dem Schliessen nicht korrekt frei gibt
+if ("where git.exe".execute().waitFor() != 0) {
+    logger.error("create-module.gradle requires git.exe in path!")
+    throw new GradleException("create-module.gradle requires git.exe in path!")
+}
+
+Properties allModules = new Properties();
+allModules.load(new FileReader(allModulesFile))
+
+Properties myModules = new Properties();
+if (myModulesFile.exists()) {
+    myModules.load(new FileReader(myModulesFile))
+}
+
+
+import groovy.swing.SwingBuilder
+
+import java.awt.BorderLayout as BL
+
+def createModule = true
+
+if (moduleName == "" || moduleRepository == "") {
+    new SwingBuilder().edt {
+        dialog(modal: true,
+                title: 'Neues Modul anlegen',
+                preferredSize: [450, 180],
+                alwaysOnTop: true,
+                resizable: false,
+                locationRelativeTo: null,
+                pack: true,
+                show: true
+        ) {
+            borderLayout(vgap: 5)
+
+            panel(constraints: BL.CENTER, border: compoundBorder([emptyBorder(10), titledBorder('Neues Modul anlegen:')])) {
+                tableLayout {
+                    tr {
+                        td(align: "left") {
+                            label "Module-Name: "
+                        }
+                        td(align: "left", colfill: true) {
+                            nameInput = textField(columns: 25, text: moduleName)
+                        }
+                    }
+                    tr {
+                        td(align: "left") {
+                            label "Module-Repository: "
+                        }
+                        td(align: "left", colfill: true) {
+                            repoInput = textField(columns: 25, text: moduleRepository)
+                        }
+                    }
+                    tr {
+                        td(colspan: 2, align: "center") {
+                            messages = label("Bitte Namen und Repository-URL ausfüllen")
+                        }
+                    }
+                }
+            }
+
+            panel(constraints: BL.SOUTH) {
+                hbox {
+                    button(defaultButton: true, text: 'OK', actionPerformed: {
+                        if (new File(modulesDir, nameInput.text).exists()) {
+                            messages.text = "Es gibt schon ein Modul \"${nameInput.text}\"!"
+                        } else {
+                            moduleName = nameInput.text
+                            moduleRepository = repoInput.text
+                            createModule = true
+                            dispose()
+                        }
+                    })
+
+                    button(defaultButton: false, text: 'Abbrechen', actionPerformed: {
+                        createModule = false
+                        dispose();
+                    })
+                }
+            }
+        }
+    }
+}
+
+if (!createModule) {
+    throw new GradleException("create-module aborted!")
+}
+
+def newModuleDir = new File(modulesDir, moduleName)
+
+if (newModuleDir.exists()) {
+    throw new GradleException("module ${moduleName} already exists!")
+}
+
+println "cloning module-skeleton..."
+cloneDir.deleteDir()
+"git clone --depth 1 $skeletonRepositoryUrl ${cloneDir.canonicalPath}".execute().waitFor()
+new File(cloneDir, 'README.md').delete()
+
+println "creating new module at $newModuleDir..."
+copy {
+    from cloneDir
+    into newModuleDir
+    exclude ".git/**"
+}
+
+cloneDir.deleteDir()
+
+println "initializing module..."
+new File(newModuleDir, 'src').mkdirs()
+"git init".execute([], newModuleDir).waitFor()
+"git remote add origin $moduleRepository".execute([], newModuleDir).waitFor()
+"git add .".execute([], newModuleDir).waitFor()
+"git update-index --chmod=+x make-root-project".execute([], newModuleDir).waitFor()
+"git update-index --chmod=+x gradlew".execute([], newModuleDir).waitFor()
+"git commit -m\"module $moduleName created\"".execute([], newModuleDir).waitFor()
+
+println "adding module to modules-list..."
+myModules.setProperty(moduleName, moduleRepository)
+allModules.setProperty(moduleName, moduleRepository)
+myModules.store(new FileWriter(myModulesFile), "Aktive Module")
+allModules.store(new FileWriter(allModulesFile), "Alle Module")
+
+

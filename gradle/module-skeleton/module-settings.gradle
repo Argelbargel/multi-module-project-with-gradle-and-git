@@ -1,0 +1,23 @@
+gradle.allprojects {
+    if (!rootProject.hasProperty("module_settings_applied")) {
+        rootProject.ext {
+            module_settings_applied = []
+        }
+
+        buildscript {
+            apply from: "$rootDir/gradle/getFromProjectOrRepository.gradle"
+
+            applyFromProjectOrRepository "gradle/config/common.gradle"
+
+            repositories buildRepositories.plugins
+        }
+    }
+}
+
+// Hier werden (projektweite) Gradle-Einstellungen und Unterprojekte bestimmt
+//
+// Da Gradle diese Anweisung in der Datei settings.gradle erwartet, muss das Projekt für entweder über
+// gradlew -c includes.gradle <task> gebaut werden, oder mit dem Befehl make-root-project.bat für das eigenständige Bauen
+// vorbereitet werden
+
+// include '<project>'

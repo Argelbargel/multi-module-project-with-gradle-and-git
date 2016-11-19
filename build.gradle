@@ -1,0 +1,11 @@
+apply plugin: "base"
+
+group 'de.theprojects.multi-module-project-with-gradle-and-git'
+
+
+task cleanModules(type: Delete) {
+    group 'build setup'
+
+    delete buildDir
+    delete "$rootDir/modules/"
+}

@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+cp -u module-settings.gradle settings.gradle

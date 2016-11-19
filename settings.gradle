@@ -1,0 +1,56 @@
+def moduleSettingsFileName = "module-settings.gradle"
+
+def Properties modules = new Properties()
+
+def modulesFile = file("$rootDir/my-modules.properties")
+if (modulesFile.exists()) {
+    modules.load(new FileReader(modulesFile))
+}
+
+for (String module : modules.propertyNames()) {
+    def moduleDir = file("$rootDir/modules/$module")
+
+    if (moduleDir.exists()) {
+        def moduleSettings = file("${moduleDir}/settings.gradle")
+        if (moduleSettings.exists()) {
+            logger.warn("WARNING: the gradle project ${module} contains a file named settings.gradle and can not be used as module! ignoring project at $moduleDir...")
+            continue
+        }
+
+        include module
+
+        def moduleProject = project(":${module}")
+
+        moduleProject.projectDir = moduleDir
+        def moduleIncludes = "${moduleProject.projectDir}/$moduleSettingsFileName"
+
+        if (file(moduleIncludes).exists()) {
+            apply from: moduleIncludes, to: new ModuleIncluder(gradle, settings, moduleProject);
+        }
+    }
+}
+
+
+class ModuleIncluder {
+    private final Gradle gradle
+    private final Settings settings;
+    private final ProjectDescriptor module
+
+    def ModuleIncluder(Gradle gradle, Settings settings, ProjectDescriptor module) {
+        this.gradle = gradle;
+        this.settings = settings;
+        this.module = module
+    }
+
+    def include(String... args) {
+        args.each {
+            def projectPath = it.startsWith(':') ? it.substring(1) : it
+            def modulePath = "${module.path}:$projectPath";
+            settings.include modulePath
+
+            def project = settings.project(modulePath)
+            project.projectDir = new File(module.projectDir, projectPath.replace(":", "/"))
+        }
+    }
+}
+

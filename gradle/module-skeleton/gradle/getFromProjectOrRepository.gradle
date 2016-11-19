@@ -1,0 +1,54 @@
+// für die lokale Entwicklung  ist es sinnvoll, die Dateien aus dem Repository unterhalb des Build-Verzeichnisses
+// abzulegen, damit beim clean jeweils die neueste Version geladen wird. Im Jenkins z.B. is das aber doof, da man meist
+// ein clean vor dem Build ausführt, das die während der Konfigurationsphase geladenen Dateien direkt von clean wieder
+// löscht, woraufhin der Build fehlschlägt.
+// Deshalb kann das Verzeichnis per Projekt-Parameter angepasst werden - oder per System-Eigenschaft auch in der IDE,
+// falls lokal das gleiche Verhalten wie im CI-Server erreicht werden soll
+def fromRepositoryPath = System.properties.getOrDefault('getFromRepository.path', "${rootProject.buildDir}/.fromRepository")
+if (rootProject.hasProperty("getFromRepository.path")) {
+    fromRepositoryPath = new File(rootProject.projectDir, rootProject.getProperty("getFromRepository.path")).canonicalPath
+}
+
+ext {
+    fileFromProjectOrRepository = { path ->
+        def localFile = new File(projectDir, path)
+        if (localFile.exists()) {
+            return localFile
+        }
+
+        def rootDir = findRootDir(projectDir)
+        localFile = new File(rootDir, path)
+        if (localFile.exists()) {
+            return localFile
+        }
+
+        localFile = file("$fromRepositoryPath/$path")
+        if (localFile.exists()) {
+            return localFile
+        }
+
+        localFile.parentFile.mkdirs()
+        new URL("$fileRepositoryBaseUrl/$path")
+                .withInputStream { is -> localFile.withOutputStream { os -> os << is } }
+
+        return localFile
+    }
+
+    applyFromProjectOrRepository = { path ->
+        apply from: fileFromProjectOrRepository(path)
+    }
+}
+
+def findRootDir(File current) {
+    def parent = current.parentFile
+
+    if (parent == null) {
+        return current
+    }
+
+    if (!new File(parent, "build.gradle").exists() && parent.name != "modules") {
+        return current
+    }
+
+    return findRootDir(parent)
+}

@@ -1,0 +1,54 @@
+
+group = 'de.theprojects.multi-module-project-with-gradle-and-git'
+project.archivesBaseName = "<name>"
+
+
+// apply custom plugin
+//buildscript {
+//    dependencies {
+//        classpath gradlePlugins.<plugin>.dependency
+//    }
+//}
+// apply plugin: gradlePlugins.<plugin>.name
+
+
+// ext {
+//    projektweite Variablen
+// }
+
+
+// configurations {
+//     <name> { /* <Beschreibung> */}
+// }
+
+
+// dependencies {
+//     <name> <dependency>
+// }}
+
+
+// distributions {
+//     <name> {
+//         /* Beschreibung> */
+//         baseName = project.archivesBaseName // wenn, wie z.B. beim application-Plugin der Name sonst nicht beachtet wird
+//     }
+// }
+
+
+// <eigene Tasks, Konfiguration etc.>
+
+
+// artifacts {
+//    für alle Artefakte in der Konfiguration publications werden automatisch Maven-Publikationen generiert
+//    publications <Tasks, die öffentliche Artefakte generieren>
+//    WICHTIG: statt "from components.jar" muss "artifact jar" verwendet werden, da es sonst Probleme mit der
+//    Auflösung der Projekt-Abhängigkeiten gibt!
+// }
+
+
+// publishing {
+//    publications {
+//       zusätzliche Publikationen; Publikationen bei denen die artifactId dem Namen einesoben definierten Artefakts
+//       entspricht, überschreiben die automatisch generierten Publikationen
+//    }
+//}
