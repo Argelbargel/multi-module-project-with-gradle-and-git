@@ -1,16 +1,24 @@
-def myModulesFile = file("my-modules.properties")
-def allModulesFile = file("modules.properties")
-def skeletonDir = file("gradle/module-skeleton").canonicalFile
-def modulesDir = file("modules").canonicalFile
-
-def moduleName = (gradle.startParameter.projectProperties.containsKey("module.name")) ? gradle.startParameter.projectProperties.get("module.name") : ""
-def moduleRepository = (gradle.startParameter.projectProperties.containsKey("module.repository")) ? gradle.startParameter.projectProperties.get("module.repository") : ""
-
-// wir nutzen den git-Befehl auf der Kommandzeile, da Grgit Verzeichnisse nach dem Schliessen nicht korrekt frei gibt
-if ("where git.exe".execute().waitFor() != 0) {
+import org.gradle.internal.os.OperatingSystem;
+// we have to use the git command on the path because GrGit does not release directories properly even when closed
+if (!OperatingSystem.current().isWindows() && "where git.exe".execute().waitFor() != 0) {
+    logger.error("create-module.gradle requires git.exe in path!")
+    throw new GradleException("create-module.gradle requires git.exe in path!")
+} else if ("which git".execute().waitFor() != 0) {
     logger.error("create-module.gradle requires git.exe in path!")
     throw new GradleException("create-module.gradle requires git.exe in path!")
 }
+
+def parameters = gradle.startParameter
+def projectDir = parameters.currentDir.canonicalPath
+def myModulesFile = file("$projectDir/my-modules.properties")
+def allModulesFile = file("$projectDir/modules.properties")
+def skeletonDir = file("$projectDir/gradle/module-skeleton").canonicalFile
+def modulesDir = file("$projectDir/modules").canonicalFile
+
+def properties = parameters.projectProperties
+def moduleName = (properties.containsKey("module.name")) ? properties.get("module.name") : ""
+def moduleRepository = (properties.containsKey("module.repository")) ? properties.get("module.repository") : ""
+
 
 Properties allModules = new Properties();
 allModules.load(new FileReader(allModulesFile))
@@ -118,7 +126,7 @@ new File(newModuleDir, 'src').mkdirs()
 println "adding module to modules-list..."
 myModules.setProperty(moduleName, moduleRepository)
 allModules.setProperty(moduleName, moduleRepository)
-myModules.store(new FileWriter(myModulesFile), "Aktive Module")
-allModules.store(new FileWriter(allModulesFile), "Alle Module")
+myModules.store(new FileWriter(myModulesFile), "active modules")
+allModules.store(new FileWriter(allModulesFile), "all modules")
 
 
