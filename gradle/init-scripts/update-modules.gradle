@@ -4,7 +4,6 @@ def selectedModules = null
 
 initscript {
     repositories {
-        maven { url "http://dev-repo.swr.ard:10080/artifactory/mavencentral" }
         mavenCentral()
     }
 
